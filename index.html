@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Demo Case Battles</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#0b1220;
+  color:#e5e7eb;
+}
+
+header {
+  background:#0f172a;
+  padding:15px 30px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.balance {
+  display:flex;
+  gap:15px;
+  background:#111827;
+  padding:10px 15px;
+  border-radius:10px;
+  font-weight:bold;
+}
+
+.container {
+  padding:25px;
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:20px;
+}
+
+.cases {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:15px;
+}
+
+.case {
+  background:#111827;
+  border-radius:14px;
+  padding:15px;
+  text-align:center;
+}
+
+.case button {
+  background:#22c55e;
+  border:none;
+  padding:8px 12px;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.panel {
+  background:#020617;
+  border-radius:14px;
+  padding:15px;
+  margin-bottom:15px;
+}
+
+.log {
+  max-height:120px;
+  overflow:auto;
+  font-size:14px;
+}
+
+.inv-item {
+  background:#111827;
+  padding:6px;
+  border-radius:6px;
+  margin-bottom:5px;
+  font-size:14px;
+}
+
+.win { color:#22c55e; }
+.lose { color:#ef4444; }
+.info { color:#38bdf8; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>⚔️ Demo Case Battles</h2>
+  <div class="balance">
+    🔷 BGL: <span id="bgl">2</span>
+    💎 DLS: <span id="dls">150</span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- LEFT -->
+<div>
+  <h3>Case Battles</h3>
+  <div class="cases">
+    <div class="case">
+      <h4>Starter Case</h4>
+      <p>25 DLS</p>
+      <button onclick="battle(25)">Start</button>
+    </div>
+    <div class="case">
+      <h4>Elite Case</h4>
+      <p>150 DLS</p>
+      <button onclick="battle(150)">Start</button>
+    </div>
+    <div class="case">
+      <h4>BGL Battle</h4>
+      <p>1 BGL</p>
+      <button onclick="battleBGL()">Start</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <b>Battle Log</b>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<!-- RIGHT -->
+<div>
+  <div class="panel">
+    <b>🎒 Inventory</b>
+    <div id="inventory"></div>
+  </div>
+
+  <div class="panel">
+    <b>🌍 Live Feed</b>
+    <div class="log" id="feed"></div>
+  </div>
+
+  <div class="panel">
+    <b>🏆 Leaderboard</b>
+    <div id="leaderboard"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+let dls = 150;
+let bgl = 2;
+let inventory = [];
+
+const fakeUsers = ["Alex","Noob","ProGT","King","Shadow","Lucky","Zed"];
+
+function battle(cost) {
+  if (dls < cost) return log("Not enough DLS", "lose");
+
+  dls -= cost;
+  let you = rand(cost * 4);
+  let bot = rand(cost * 4);
+
+  if (you > bot) {
+    let win = cost * 2;
+    dls += win;
+    addItem("Case Drop +" + win + " DLS");
+    log(`WIN +${win} DLS`, "win");
+  } else {
+    log("LOST", "lose");
+  }
+
+  convert();
+  update();
+}
+
+function battleBGL() {
+  if (bgl < 1) return log("Not enough BGL", "lose");
+
+  bgl--;
+  if (Math.random() > 0.5) {
+    bgl += 2;
+    addItem("🔥 BGL Win");
+    log("BGL BATTLE WON +2", "win");
+  } else {
+    log("BGL BATTLE LOST", "lose");
+  }
+  update();
+}
+
+function convert() {
+  if (dls >= 100) {
+    let g = Math.floor(dls / 100);
+    bgl += g;
+    dls %= 100;
+    log(`Converted ${g*100} DLS → ${g} BGL`, "info");
+  }
+}
+
+function addItem(item) {
+  inventory.push(item);
+  renderInventory();
+}
+
+function renderInventory() {
+  let inv = document.getElementById("inventory");
+  inv.innerHTML = "";
+  inventory.slice(-6).forEach(i => {
+    let d = document.createElement("div");
+    d.className = "inv-item";
+    d.innerText = i;
+    inv.appendChild(d);
+  });
+}
+
+function log(text, cls) {
+  let l = document.getElementById("log");
+  let d = document.createElement("div");
+  d.className = cls;
+  d.innerText = text;
+  l.appendChild(d);
+  l.scrollTop = l.scrollHeight;
+}
+
+function update() {
+  document.getElementById("dls").innerText = dls;
+  document.getElementById("bgl").innerText = bgl;
+  renderLeaderboard();
+}
+
+function rand(max) {
+  return Math.floor(Math.random() * max) + 1;
+}
+
+// Fake live feed
+setInterval(() => {
+  let f = document.getElementById("feed");
+  let u = fakeUsers[rand(fakeUsers.length)-1];
+  let d = document.createElement("div");
+  d.innerText = `${u} opened a case`;
+  f.appendChild(d);
+  f.scrollTop = f.scrollHeight;
+}, 2000);
+
+function renderLeaderboard() {
+  let lb = document.getElementById("leaderboard");
+  lb.innerHTML = "";
+  let users = [
+    {n:"You", b:bgl},
+    {n:"ProGT", b:5},
+    {n:"King", b:4},
+    {n:"Noob", b:3}
+  ];
+  users.sort((a,b)=>b.b-a.b).forEach(u=>{
+    let d = document.createElement("div");
+    d.innerText = `${u.n} — ${u.b} BGL`;
+    lb.appendChild(d);
+  });
+}
+
+update();
+</script>
+
+</body>
+</html>
