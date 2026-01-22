@@ -2,260 +2,167 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Demo Case Battles</title>
+<title>ARMADICE – BetDice Demo</title>
 
 <style>
 body {
-  margin:0;
-  font-family: Arial, sans-serif;
-  background:#0b1220;
-  color:#e5e7eb;
-}
-
-header {
-  background:#0f172a;
-  padding:15px 30px;
+  background:#0b0f1a;
+  color:#fff;
+  font-family:Arial, sans-serif;
   display:flex;
-  justify-content:space-between;
+  justify-content:center;
   align-items:center;
-}
-
-.balance {
-  display:flex;
-  gap:15px;
-  background:#111827;
-  padding:10px 15px;
-  border-radius:10px;
-  font-weight:bold;
+  min-height:100vh;
 }
 
 .container {
+  background:#141a2e;
   padding:25px;
-  display:grid;
-  grid-template-columns:2fr 1fr;
-  gap:20px;
+  border-radius:12px;
+  width:350px;
 }
 
-.cases {
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:15px;
-}
-
-.case {
-  background:#111827;
-  border-radius:14px;
-  padding:15px;
+h1 {
   text-align:center;
+  margin-bottom:10px;
 }
 
-.case button {
-  background:#22c55e;
+.balance {
+  text-align:center;
+  margin-bottom:15px;
+  font-weight:bold;
+}
+
+input, select, button {
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  border-radius:6px;
   border:none;
-  padding:8px 12px;
-  border-radius:8px;
+  font-size:14px;
+}
+
+button {
+  background:#00ff9c;
+  color:#000;
   font-weight:bold;
   cursor:pointer;
 }
 
-.panel {
-  background:#020617;
-  border-radius:14px;
-  padding:15px;
-  margin-bottom:15px;
+button:hover {
+  opacity:0.9;
 }
 
-.log {
+.stats {
+  display:flex;
+  justify-content:space-between;
+  font-size:13px;
+  margin-top:5px;
+}
+
+.result {
+  text-align:center;
+  margin-top:10px;
+  font-size:18px;
+}
+
+.history {
+  margin-top:15px;
   max-height:120px;
-  overflow:auto;
-  font-size:14px;
+  overflow-y:auto;
+  font-size:12px;
 }
 
-.inv-item {
-  background:#111827;
-  padding:6px;
-  border-radius:6px;
-  margin-bottom:5px;
-  font-size:14px;
-}
-
-.win { color:#22c55e; }
-.lose { color:#ef4444; }
-.info { color:#38bdf8; }
+.win { color:#00ff9c; }
+.lose { color:#ff4d4d; }
 </style>
 </head>
 
 <body>
 
-<header>
-  <h2>⚔️ Demo Case Battles</h2>
-  <div class="balance">
-    🔷 BGL: <span id="bgl">2</span>
-    💎 DLS: <span id="dls">150</span>
-  </div>
-</header>
-
 <div class="container">
+  <h1>🎲 ARMADICE</h1>
 
-<!-- LEFT -->
-<div>
-  <h3>Case Battles</h3>
-  <div class="cases">
-    <div class="case">
-      <h4>Starter Case</h4>
-      <p>25 DLS</p>
-      <button onclick="battle(25)">Start</button>
-    </div>
-    <div class="case">
-      <h4>Elite Case</h4>
-      <p>150 DLS</p>
-      <button onclick="battle(150)">Start</button>
-    </div>
-    <div class="case">
-      <h4>BGL Battle</h4>
-      <p>1 BGL</p>
-      <button onclick="battleBGL()">Start</button>
-    </div>
+  <div class="balance">Balance: <span id="balance">1000</span></div>
+
+  <input type="number" id="betAmount" placeholder="Bet Amount" value="10">
+
+  <select id="mode">
+    <option value="under">Roll Under</option>
+    <option value="over">Roll Over</option>
+  </select>
+
+  <input type="number" id="chance" placeholder="Win Chance %" value="50">
+
+  <div class="stats">
+    <div>Multiplier: <span id="multiplier">1.98</span>x</div>
+    <div>Target: <span id="target">50</span></div>
   </div>
 
-  <div class="panel">
-    <b>Battle Log</b>
-    <div class="log" id="log"></div>
-  </div>
-</div>
+  <button onclick="rollDice()">ROLL DICE</button>
 
-<!-- RIGHT -->
-<div>
-  <div class="panel">
-    <b>🎒 Inventory</b>
-    <div id="inventory"></div>
-  </div>
+  <div class="result" id="result">—</div>
 
-  <div class="panel">
-    <b>🌍 Live Feed</b>
-    <div class="log" id="feed"></div>
-  </div>
-
-  <div class="panel">
-    <b>🏆 Leaderboard</b>
-    <div id="leaderboard"></div>
-  </div>
-</div>
-
+  <div class="history" id="history"></div>
 </div>
 
 <script>
-let dls = 150;
-let bgl = 2;
-let inventory = [];
+let balance = 1000;
 
-const fakeUsers = ["Alex","Noob","ProGT","King","Shadow","Lucky","Zed"];
+function updateStats() {
+  let chance = parseFloat(chanceInput.value);
+  if (chance <= 0 || chance >= 99) return;
 
-function battle(cost) {
-  if (dls < cost) return log("Not enough DLS", "lose");
+  let multiplier = (99 / chance).toFixed(2);
+  multiplierSpan.textContent = multiplier;
+  targetSpan.textContent = chance;
+}
 
-  dls -= cost;
-  let you = rand(cost * 4);
-  let bot = rand(cost * 4);
+const chanceInput = document.getElementById("chance");
+const multiplierSpan = document.getElementById("multiplier");
+const targetSpan = document.getElementById("target");
+const balanceSpan = document.getElementById("balance");
+const resultDiv = document.getElementById("result");
+const historyDiv = document.getElementById("history");
 
-  if (you > bot) {
-    let win = cost * 2;
-    dls += win;
-    addItem("Case Drop +" + win + " DLS");
-    log(`WIN +${win} DLS`, "win");
+chanceInput.addEventListener("input", updateStats);
+
+function rollDice() {
+  let bet = parseFloat(document.getElementById("betAmount").value);
+  let chance = parseFloat(chanceInput.value);
+  let mode = document.getElementById("mode").value;
+
+  if (bet <= 0 || bet > balance) return alert("Invalid bet");
+
+  let roll = Math.floor(Math.random() * 100);
+  let win = false;
+
+  if (mode === "under" && roll < chance) win = true;
+  if (mode === "over" && roll > (99 - chance)) win = true;
+
+  let multiplier = 99 / chance;
+
+  if (win) {
+    let profit = (bet * multiplier - bet).toFixed(2);
+    balance += parseFloat(profit);
+    resultDiv.innerHTML = 🎉 WIN<br>Roll: ${roll};
+    resultDiv.className = "result win";
+    addHistory(WIN | Roll ${roll} | +${profit});
   } else {
-    log("LOST", "lose");
+    balance -= bet;
+    resultDiv.innerHTML = ❌ LOSE<br>Roll: ${roll};
+    resultDiv.className = "result lose";
+    addHistory(LOSE | Roll ${roll} | -${bet});
   }
 
-  convert();
-  update();
+  balanceSpan.textContent = balance.toFixed(2);
 }
 
-function battleBGL() {
-  if (bgl < 1) return log("Not enough BGL", "lose");
-
-  bgl--;
-  if (Math.random() > 0.5) {
-    bgl += 2;
-    addItem("🔥 BGL Win");
-    log("BGL BATTLE WON +2", "win");
-  } else {
-    log("BGL BATTLE LOST", "lose");
-  }
-  update();
+function addHistory(text) {
+  let div = document.createElement("div");
+  div.textContent = text;
+  historyDiv.prepend(div);
 }
-
-function convert() {
-  if (dls >= 100) {
-    let g = Math.floor(dls / 100);
-    bgl += g;
-    dls %= 100;
-    log(`Converted ${g*100} DLS → ${g} BGL`, "info");
-  }
-}
-
-function addItem(item) {
-  inventory.push(item);
-  renderInventory();
-}
-
-function renderInventory() {
-  let inv = document.getElementById("inventory");
-  inv.innerHTML = "";
-  inventory.slice(-6).forEach(i => {
-    let d = document.createElement("div");
-    d.className = "inv-item";
-    d.innerText = i;
-    inv.appendChild(d);
-  });
-}
-
-function log(text, cls) {
-  let l = document.getElementById("log");
-  let d = document.createElement("div");
-  d.className = cls;
-  d.innerText = text;
-  l.appendChild(d);
-  l.scrollTop = l.scrollHeight;
-}
-
-function update() {
-  document.getElementById("dls").innerText = dls;
-  document.getElementById("bgl").innerText = bgl;
-  renderLeaderboard();
-}
-
-function rand(max) {
-  return Math.floor(Math.random() * max) + 1;
-}
-
-// Fake live feed
-setInterval(() => {
-  let f = document.getElementById("feed");
-  let u = fakeUsers[rand(fakeUsers.length)-1];
-  let d = document.createElement("div");
-  d.innerText = `${u} opened a case`;
-  f.appendChild(d);
-  f.scrollTop = f.scrollHeight;
-}, 2000);
-
-function renderLeaderboard() {
-  let lb = document.getElementById("leaderboard");
-  lb.innerHTML = "";
-  let users = [
-    {n:"You", b:bgl},
-    {n:"ProGT", b:5},
-    {n:"King", b:4},
-    {n:"Noob", b:3}
-  ];
-  users.sort((a,b)=>b.b-a.b).forEach(u=>{
-    let d = document.createElement("div");
-    d.innerText = `${u.n} — ${u.b} BGL`;
-    lb.appendChild(d);
-  });
-}
-
-update();
 </script>
 
 </body>
